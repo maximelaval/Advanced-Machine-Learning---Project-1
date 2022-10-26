@@ -1,1 +1,45 @@
 
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+from sklearn import feature_selection
+from sklearn.linear_model import LinearRegression
+
+X_test = pd.read_csv("X_test.csv", index_col=0).values
+X_train = pd.read_csv("X_train.csv", index_col=0).values
+y_train = pd.read_csv("y_train.csv", index_col=0).values
+
+df_train = pd.DataFrame(X_train)
+
+
+#Outlier detection
+def filter(df1, df2):
+  # Filter feature selection
+  from sklearn.feature_selection import VarianceThreshold 
+  
+  # Step 1: Removing Constant features
+  constant_filter = VarianceThreshold(threshold=0)
+  data_constant = constant_filter.fit_transform(df1)
+  #print(data_constant.shape)
+  constant_columns = [column for column in df1.columns if column not in df1.columns[constant_filter.get_support()]]
+  data_cons1 = df1.drop(constant_columns,axis=1)
+  data_cons2 = df2.drop(constant_columns,axis=1)
+      
+  # Step 2: Removing Quasi-Constant Features
+  qcons_filter = VarianceThreshold(threshold=0.001)
+  data_qcons = qcons_filter.fit_transform(df1)
+  #print(data_qcons.shape)
+  qcons_columns = [column for column in df1.columns if column not in df1.columns[qcons_filter.get_support()]]
+  data_qcons1 = df1.drop(qcons_columns,axis=1)
+  data_qcons2 = df2.drop(qcons_columns,axis=1)
+  data_qcons_t1 = data_qcons1.T
+  data_qcons_t2 = data_qcons2.T 
+  
+  # Step 3: Removing Duplicate Columns
+  data_cons_dup1 = data_qcons_t1.drop_duplicates(keep='first').T
+  data_cons_dup2 = data_qcons_t2.drop_duplicates(keep='first').T
+  return data_cons_dup1, data_cons_dup2
+  
+df_test = pd.DataFrame(X_test)
+X_train, X_test = filter(df_train, df_test)
+X_train, X_test = X_train.values, X_test.values
